@@ -77,6 +77,107 @@ cp ext/docker-nginx.conf.example ext/nginx.conf
 # the spots you'll need to change are marked.
 nano ext/nginx.conf
 ```
+## My ext/nginx.conf for localhost
+```
+# NOTE: if you wish to only connect using fallback, you can
+# remove all ssl related content from the configuration.
+
+# c[e4]?.ppy.sh is used for bancho
+# osu.ppy.sh is used for /web, /api, etc.
+# a.ppy.sh is used for osu! avatars
+
+# XXX: Uncomment this whole block if you have downloaded the database from maxmind
+# and specify the path to the .mmdb file
+# You can download the database here: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
+#geoip2 /home/user/misc/GeoLite2-City.mmdb {
+	#auto_reload 5m;
+	#$geoip2_metadata_country_build metadata build_epoch;
+	#$geoip2_data_country_code default=xx source=$remote_addr country iso_code;
+	#$geoip2_data_latitude default=0.0 source=$remote_addr location latitude;
+	#$geoip2_data_longitude default=0.0 source=$remote_addr location longitude;
+#}
+
+server {
+	listen 80 default_server;
+	server_name _;
+	return 301 https://$host$request_uri;
+}
+
+server {
+	listen 443 ssl;
+
+	# XXX: you'll need to edit this to match your domain
+	server_name ~^(?:c[e4]?|osu|b|api)\.hinamizada\.com$;
+
+	# Both paths are hardcoded in docker-compose.yml so now you
+	# don't need to change these unless you changed that.
+	# ssl_certificate     /etc/ssl/certs/bancho.pem;
+	# ssl_certificate_key /etc/ssl/private/bancho.key;
+    ssl_certificate     /home/hinami/certs/localhost.crt;
+	ssl_certificate_key /home/hinami/certs/localhost.key;
+
+	# TODO: further ssl configuration
+	ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH:@SECLEVEL=1";
+
+	location / {
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Real-IP  $remote_addr;
+		#proxy_set_header X-Country-Code $geoip2_data_country_code;
+		#proxy_set_header X-Latitude $geoip2_data_latitude;
+		#proxy_set_header X-Longitude $geoip2_data_longitude;
+		proxy_set_header Host $http_host;
+		add_header Access-Control-Allow-Origin *;
+		proxy_redirect off;
+		proxy_pass http://bancho;
+	}
+}
+
+server {
+	listen 443 ssl;
+
+	# XXX: you'll need to edit this to match your domain
+	server_name assets.hinamizada.com;
+
+	# Both paths are hardcoded in docker-compose.yml so now you
+	# don't need to change these unless you changed that.
+	# ssl_certificate     /etc/ssl/certs/bancho.pem;
+	# ssl_certificate_key /etc/ssl/private/bancho.key;
+
+    ssl_certificate     /home/hinami/certs/localhost.crt;
+	ssl_certificate_key /home/hinami/certs/localhost.key;
+
+	# TODO: further ssl configuration
+	ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH:@SECLEVEL=1";
+
+	location / {
+		default_type image/png;
+		root /.data/assets;
+	}
+}
+
+server {
+	listen 443 ssl;
+
+	# XXX: you'll need to edit this to match your domain
+	server_name a.hinamizada.com;
+
+	# Both paths are hardcoded in docker-compose.yml so now you
+	# don't need to change these unless you changed that.
+	# ssl_certificate     /etc/ssl/certs/bancho.pem;
+	# ssl_certificate_key /etc/ssl/private/bancho.key;
+    ssl_certificate     /home/hinami/certs/localhost.crt;
+	ssl_certificate_key /home/hinami/certs/localhost.key;
+
+	# TODO: further ssl configuration
+	ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH:@SECLEVEL=1";
+
+	location / {
+		root /.data/avatars;
+		try_files $uri $uri.png $uri.jpg $uri.gif $uri.jpeg $uri.jfif /default.jpg = 404;
+	}
+}
+```
+
 
 ## congratulations! you just set up an osu! private server
 
@@ -234,6 +335,79 @@ cp manual.env.example .env
 
 # open the configuration file for editing
 nano .env
+```
+## My .env config for localhost
+```
+# for nginx reverse proxy to work through the containers, the bancho
+# server must expose itself on port 80 to be accessed on http://bancho.
+SERVER_ADDR=/tmp/bancho.sock
+SERVER_PORT=
+
+HOST_PORT=443
+
+# XXX: change your db credentials
+DB_USER=hinami
+DB_PASS=hinami
+DB_NAME=banchopydev
+
+DB_HOST=localhost
+DB_PORT=3306
+
+REDIS_USER=default
+REDIS_PASS=
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+
+OSU_API_KEY=XDDXXDXDXD
+
+# Chimu: https://api.chimu.moe/cheesegull/search - https://api.chimu.moe/v1/download
+# osu.direct: https://osu.direct/api/search - https://osu.direct/d
+MIRROR_SEARCH_ENDPOINT=https://catboy.best/api/search
+MIRROR_DOWNLOAD_ENDPOINT=https://catboy.best/d
+
+# XXX: change your domain if applicable
+DOMAIN=hinamizada.com
+
+COMMAND_PREFIX=!
+
+SEASONAL_BGS=https://akatsuki.pw/static/flower.png,https://i.cmyui.xyz/nrMT4V2RR3PR.jpeg
+
+MENU_ICON_URL=https://akatsuki.pw/static/logos/logo_ingame.png
+MENU_ONCLICK_URL=https://akatsuki.pw
+
+DATADOG_API_KEY=
+DATADOG_APP_KEY=
+
+DEBUG=True
+
+# redirect beatmaps, beatmapsets, and forum
+# pages of maps to the official osu! website
+REDIRECT_OSU_URLS=True
+
+PP_CACHED_ACCS=90,95,98,99,100
+
+DISALLOWED_NAMES=mrekk,vaxei,btmc,cookiezi
+DISALLOWED_PASSWORDS=password,abc123
+DISALLOW_OLD_CLIENTS=True
+
+DISCORD_AUDIT_LOG_WEBHOOK=
+
+# automatically share information with the primary
+# developer of bancho.py (https://github.com/cmyui)
+# for debugging & development purposes.
+AUTOMATICALLY_REPORT_PROBLEMS=False
+
+# XXX: change these to their location on your host server
+SSL_CERT_PATH=/home/hinami/certs/fullchain.crt
+SSL_KEY_PATH=/home/hinami/certs/private.key
+
+# advanced dev settings
+
+## WARNING: only touch this once you've
+##          read through what it enables.
+##          you could put your server at risk.
+DEVELOPER_MODE=True
 ```
 
 ## congratulations! you just set up an osu! private server
