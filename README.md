@@ -96,7 +96,9 @@ nano ext/nginx.conf
 	#$geoip2_data_latitude default=0.0 source=$remote_addr location latitude;
 	#$geoip2_data_longitude default=0.0 source=$remote_addr location longitude;
 #}
-
+upstream bancho {
+	server unix:/tmp/bancho.sock fail_timeout=0;
+}
 server {
 	listen 80 default_server;
 	server_name _;
@@ -111,10 +113,8 @@ server {
 
 	# Both paths are hardcoded in docker-compose.yml so now you
 	# don't need to change these unless you changed that.
-	# ssl_certificate     /etc/ssl/certs/bancho.pem;
-	# ssl_certificate_key /etc/ssl/private/bancho.key;
-    ssl_certificate     /home/hinami/certs/localhost.crt;
-	ssl_certificate_key /home/hinami/certs/localhost.key;
+	ssl_certificate     /home/hinami/certs/cert.pem;
+	ssl_certificate_key /home/hinami/certs/key.pem;
 
 	# TODO: further ssl configuration
 	ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH:@SECLEVEL=1";
@@ -140,18 +140,15 @@ server {
 
 	# Both paths are hardcoded in docker-compose.yml so now you
 	# don't need to change these unless you changed that.
-	# ssl_certificate     /etc/ssl/certs/bancho.pem;
-	# ssl_certificate_key /etc/ssl/private/bancho.key;
-
-    ssl_certificate     /home/hinami/certs/localhost.crt;
-	ssl_certificate_key /home/hinami/certs/localhost.key;
+	ssl_certificate     /home/hinami/certs/cert.pem;
+	ssl_certificate_key /home/hinami/certs/key.pem;
 
 	# TODO: further ssl configuration
 	ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH:@SECLEVEL=1";
 
 	location / {
 		default_type image/png;
-		root /.data/assets;
+		root /home/hinami/bancho.py/.data/assets/;
 	}
 }
 
@@ -163,21 +160,18 @@ server {
 
 	# Both paths are hardcoded in docker-compose.yml so now you
 	# don't need to change these unless you changed that.
-	# ssl_certificate     /etc/ssl/certs/bancho.pem;
-	# ssl_certificate_key /etc/ssl/private/bancho.key;
-    ssl_certificate     /home/hinami/certs/localhost.crt;
-	ssl_certificate_key /home/hinami/certs/localhost.key;
+	ssl_certificate     /home/hinami/certs/cert.pem;
+	ssl_certificate_key /home/hinami/certs/key.pem;
 
 	# TODO: further ssl configuration
 	ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH:@SECLEVEL=1";
 
 	location / {
-		root /.data/avatars;
+		root /home/hinami/bancho.py/.data/avatars/;
 		try_files $uri $uri.png $uri.jpg $uri.gif $uri.jpeg $uri.jfif /default.jpg = 404;
 	}
 }
 ```
-
 
 ## congratulations! you just set up an osu! private server
 
@@ -417,6 +411,31 @@ if everything went well, you should be able to start your server up:
 ```sh
 # start the server
 make run
+```
+
+## Si tienes problemas con los avatars `a.domain()`, puede que sea por los permisos que tiene tu user de nginx
+```
+ps -ef | grep nginx
+
+# Ingresa tu usuario de nginx y la ruta de tus avatars:
+sudo -u {usuario} ls -l /ruta/al/directorio/avatars/
+
+Si tienes permiso denegado, verifica si existen:
+ls -ld /ruta/al/directorio /ruta/al/directorio/de/avatars/
+
+Ahora, si existen, ejecuta este comando para seder permisos:
+sudo chmod +rx /ruta/al/directorio /ruta/al/directorio/de/avatars/
+
+Para comprobar que el usuario tiene permisos, ejecutamos esto:
+sudo -u {usuario} ls -l /ruta/al/directorio/de/avatars/
+```
+## Estas lineas son las que ejecuté para resolver el error, teniendo como user a http y que la ruta de mis avatars es `/home/hinami/bancho.py/.data/avatars/`:
+```
+ps -ef | grep nginx
+sudo -u http ls -l /home/hinami/bancho.py/.data/avatars/
+ls -ld /home/hinami /home/hinami/bancho.py/.data
+sudo chmod +rx /home/hinami /home/hinami/bancho.py/.data
+sudo -u http ls -l /home/hinami/bancho.py/.data/avatars/
 ```
 
 and you should see something along the lines of:
