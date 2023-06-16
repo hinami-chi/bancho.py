@@ -413,7 +413,7 @@ if everything went well, you should be able to start your server up:
 make run
 ```
 
-## Si tienes problemas con los avatars `a.domain()`, puede que sea por los permisos que tiene tu user de nginx
+## Si tienes problemas con los avatars `a.domain()`, puede que sea por los permisos que tiene tu user de nginx (solución testeada en EndeavourOS)
 ```
 ps -ef | grep nginx
 
