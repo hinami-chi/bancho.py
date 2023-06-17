@@ -436,6 +436,7 @@ sudo -u http ls -l /home/hinami/bancho.py/.data/avatars/
 ls -ld /home/hinami /home/hinami/bancho.py/.data
 sudo chmod +rx /home/hinami /home/hinami/bancho.py/.data
 sudo -u http ls -l /home/hinami/bancho.py/.data/avatars/
+sudo systemctl restart nginx
 ```
 
 and you should see something along the lines of:
